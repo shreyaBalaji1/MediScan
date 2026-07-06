@@ -1,0 +1,31 @@
+<div class="auth-wrap">
+  <form class="auth-card card" (ngSubmit)="submit()">
+    <h1>MediScan</h1>
+    <p class="muted">Create an account to save favorites and notes.</p>
+
+    <label>
+      Name (optional)
+      <input type="text" [(ngModel)]="name" name="name" placeholder="Jane Doe" />
+    </label>
+
+    <label>
+      Email
+      <input type="email" [(ngModel)]="email" name="email" placeholder="you@example.com" />
+    </label>
+
+    <label>
+      Password
+      <input type="password" [(ngModel)]="password" name="password" placeholder="At least 6 characters" />
+    </label>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <button class="btn primary" type="submit" [disabled]="isLoading">
+      {{ isLoading ? 'Creating account...' : 'Register' }}
+    </button>
+
+    <p class="muted switch-link">
+      Already have an account? <a routerLink="/login">Log In</a>
+    </p>
+  </form>
+</div>

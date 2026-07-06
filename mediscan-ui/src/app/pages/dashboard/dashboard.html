@@ -1,0 +1,204 @@
+<div class="app-wrap">
+  <header class="app-header">
+    <div class="brand">
+      <h1>MediScan</h1>
+      <p class="tag">Quick medication lookup powered by openFDA</p>
+    </div>
+    <button class="btn outline logout-btn" (click)="logout()">Log Out</button>
+  </header>
+
+  <main class="container">
+    <section class="search-area card">
+      <div class="search-row">
+        <input
+          type="text"
+          [(ngModel)]="drugName"
+          placeholder="Search medication (e.g. Aspirin)"
+          aria-label="Drug name"
+        />
+        <button class="btn primary" (click)="searchDrug()">Search</button>
+      </div>
+
+      <p class="muted" *ngIf="isLoading">Searching…</p>
+      <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+      <p class="info" *ngIf="favoriteMessage">{{ favoriteMessage }}</p>
+
+      <div *ngIf="drugResult" class="result card">
+        <div class="result-header">
+          <h2>{{ drugResult.name }}</h2>
+          <button
+            class="btn success"
+            (click)="saveFavorite()"
+            [disabled]="isFavorite"
+            aria-pressed="{{isFavorite}}"
+          >
+            {{ isFavorite ? 'Saved' : 'Save to Favorites' }}
+          </button>
+        </div>
+
+        <div class="result-body">
+          <p><strong>Purpose:</strong> {{ drugResult.purpose || 'N/A' }}</p>
+          <p><strong>Warnings:</strong> {{ drugResult.warnings }}</p>
+        </div>
+
+        <div class="notes-section">
+          <h4>Notes</h4>
+
+          <p class="error" *ngIf="noteMessage">{{ noteMessage }}</p>
+
+          <div class="note-input">
+            <textarea [(ngModel)]="newNoteText" placeholder="Add a note about this drug..."></textarea>
+            <div class="note-hint muted">Tip: the note will also be saved when you click "Save to Favorites".</div>
+            <div class="note-actions">
+              <button class="btn primary" (click)="addNote()" [disabled]="!newNoteText.trim()">Add Note</button>
+            </div>
+          </div>
+
+          <div *ngIf="notes.length === 0" class="muted">No notes for this drug yet.</div>
+
+            <div class="notes-list">
+            <div *ngFor="let note of notes" class="note-card card">
+              <div class="note-head">
+                <div class="note-meta">
+                  <strong>{{ note.drugName }}</strong>
+                  <div class="muted">{{ note.createdAt | date:'short' }}</div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <button *ngIf="note.id && !editingNoteText[note.id]" class="btn outline small" (click)="startEdit(note)">Edit</button>
+                  <button class="btn danger small" (click)="deleteNote(note.id)">Delete</button>
+                </div>
+              </div>
+              <ng-container *ngIf="note.id as nid">
+                <div *ngIf="editingNoteText[nid]" class="note-edit">
+                  <textarea [(ngModel)]="editingNoteText[nid]"></textarea>
+                  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+                    <button class="btn" (click)="cancelEdit(note)">Cancel</button>
+                    <button class="btn primary" (click)="saveEdit(note)" [disabled]="savingNoteId === nid">{{ savingNoteId === nid ? 'Saving...' : 'Save' }}</button>
+                  </div>
+                </div>
+                <p *ngIf="!editingNoteText[nid]" class="muted">{{ note.noteText }}</p>
+              </ng-container>
+              <ng-container *ngIf="!note.id">
+                <p class="muted">{{ note.noteText }}</p>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="interaction-section card">
+      <h2>Interaction Checker</h2>
+      <p class="muted">Check whether two drugs' FDA label text mention each other.</p>
+
+      <div class="interaction-row">
+        <input
+          type="text"
+          [(ngModel)]="interactionDrugA"
+          placeholder="First drug (e.g. Warfarin)"
+          aria-label="First drug"
+        />
+        <input
+          type="text"
+          [(ngModel)]="interactionDrugB"
+          placeholder="Second drug (e.g. Aspirin)"
+          aria-label="Second drug"
+        />
+        <button class="btn primary" (click)="checkInteraction()" [disabled]="isCheckingInteraction">
+          {{ isCheckingInteraction ? 'Checking...' : 'Check' }}
+        </button>
+      </div>
+
+      <p class="error" *ngIf="interactionError">{{ interactionError }}</p>
+
+      <div *ngIf="interactionResult" class="interaction-result">
+        <div class="interaction-flag" [class.flagged]="interactionResult.possibleInteractionFlagged">
+          {{ interactionResult.possibleInteractionFlagged
+            ? '⚠ Possible interaction mentioned in FDA label text.'
+            : 'No mention found in either label\'s text.' }}
+        </div>
+
+        <div class="interaction-columns">
+          <div class="interaction-col">
+            <h4>{{ interactionResult.drugA.name }}</h4>
+            <p class="muted">{{ interactionResult.drugA.drugInteractions }}</p>
+          </div>
+          <div class="interaction-col">
+            <h4>{{ interactionResult.drugB.name }}</h4>
+            <p class="muted">{{ interactionResult.drugB.drugInteractions }}</p>
+          </div>
+        </div>
+
+        <p class="disclaimer muted">{{ interactionResult.disclaimer }}</p>
+      </div>
+    </section>
+
+    <section class="favorites-section">
+      <h2>Saved Favorites</h2>
+
+
+
+      <div *ngIf="favorites.length === 0" class="empty">
+        <p>No favorites saved yet.</p>
+      </div>
+
+      <div class="favorites-grid">
+        <div *ngFor="let favorite of favorites" class="favorite-card card">
+          <div class="fav-head">
+            <h3>{{ favorite.drugName }}</h3>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn danger small" (click)="deleteFavorite(favorite.id)">Delete</button>
+            </div>
+          </div>
+          <p class="muted"><strong>Purpose:</strong> {{ favorite.purpose || 'N/A' }}</p>
+          <p class="muted"><strong>Warnings:</strong> {{ favorite.warnings }}</p>
+
+          <div class="favorite-notes">
+            <h5>Notes</h5>
+            <div class="fav-add-note">
+              <div *ngIf="!favoriteShowNewNote[getFavoriteKey(favorite)]">
+                <button class="btn" (click)="favoriteShowNewNote[getFavoriteKey(favorite)] = true">Add Note</button>
+              </div>
+              <div *ngIf="favoriteShowNewNote[getFavoriteKey(favorite)]">
+                <textarea [(ngModel)]="favoriteNewNote[getFavoriteKey(favorite)]" placeholder="Add a note to this favorite..."></textarea>
+                <div class="note-actions" style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+                  <button class="btn" (click)="favoriteShowNewNote[getFavoriteKey(favorite)] = false">Cancel</button>
+                  <button class="btn primary" (click)="addNoteToFavorite(favorite)" [disabled]="!(favoriteNewNote[getFavoriteKey(favorite)] || '').trim()">Add Note</button>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!(favoriteNotes[getFavoriteKey(favorite)]?.length)" class="muted">No notes</div>
+            <div *ngFor="let fn of favoriteNotes[getFavoriteKey(favorite)] || []" class="note-card card">
+              <div class="note-head">
+                <div class="note-meta">
+                  <div class="muted">{{ fn.createdAt | date:'short' }}</div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <button *ngIf="fn.id && !editingNoteText[fn.id]" class="btn outline small" (click)="startEdit(fn)">Edit</button>
+                  <button class="btn danger small" (click)="deleteNote(fn.id)">Delete</button>
+                </div>
+              </div>
+              <ng-container *ngIf="fn.id as fid">
+                <div *ngIf="editingNoteText[fid]" class="note-edit">
+                  <textarea [(ngModel)]="editingNoteText[fid]"></textarea>
+                  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+                    <button class="btn" (click)="cancelEdit(fn)">Cancel</button>
+                    <button class="btn primary" (click)="saveEdit(fn)" [disabled]="savingNoteId === fid">{{ savingNoteId === fid ? 'Saving...' : 'Save' }}</button>
+                  </div>
+                </div>
+                <p *ngIf="!editingNoteText[fid]" class="muted">{{ fn.noteText }}</p>
+              </ng-container>
+              <ng-container *ngIf="!fn.id">
+                <p class="muted">{{ fn.noteText }}</p>
+              </ng-container>
+            </div>
+          </div>
+
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer muted">MediScan — quick reference only. Not medical advice.</footer>
+</div>

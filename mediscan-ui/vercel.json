@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/mediscan-ui/browser",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

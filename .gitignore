@@ -1,0 +1,21 @@
+# .NET (MediScanApi)
+MediScanApi/bin/
+MediScanApi/obj/
+*.db
+*.db-shm
+*.db-wal
+
+# Angular (mediscan-ui) — also has its own .gitignore, this is a root-level fallback
+mediscan-ui/node_modules/
+mediscan-ui/dist/
+mediscan-ui/.angular/
+
+# IDE / tooling
+.vscode/
+.idea/
+.zencoder/
+.zenflow/
+.claude/
+
+# OS
+.DS_Store

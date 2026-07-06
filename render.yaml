@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: mediscan-api
+    runtime: docker
+    dockerfilePath: ./MediScanApi/Dockerfile
+    dockerContext: ./MediScanApi
+    plan: free
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Jwt__Key
+        generateValue: true
+      - key: Jwt__Issuer
+        value: MediScanApi
+      - key: Jwt__Audience
+        value: MediScanClient
+      - key: Jwt__ExpireMinutes
+        value: "60"
+      # Set this to your deployed Vercel URL (e.g. https://mediscan-ui.vercel.app)
+      # after the frontend is deployed, or the browser build will be blocked by CORS.
+      - key: Cors__AllowedOrigins__0
+        value: "http://localhost:4200"

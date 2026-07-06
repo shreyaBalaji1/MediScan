@@ -1,0 +1,26 @@
+<div class="auth-wrap">
+  <form class="auth-card card" (ngSubmit)="submit()">
+    <h1>MediScan</h1>
+    <p class="muted">Log in to see your saved medications.</p>
+
+    <label>
+      Email
+      <input type="email" [(ngModel)]="email" name="email" placeholder="you@example.com" />
+    </label>
+
+    <label>
+      Password
+      <input type="password" [(ngModel)]="password" name="password" placeholder="••••••••" />
+    </label>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <button class="btn primary" type="submit" [disabled]="isLoading">
+      {{ isLoading ? 'Logging in...' : 'Log In' }}
+    </button>
+
+    <p class="muted switch-link">
+      Don't have an account? <a routerLink="/register">Register</a>
+    </p>
+  </form>
+</div>
