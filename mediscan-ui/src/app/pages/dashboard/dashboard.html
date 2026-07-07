@@ -37,8 +37,13 @@
         </div>
 
         <div class="result-body">
-          <p><strong>Purpose:</strong> {{ drugResult.purpose || 'N/A' }}</p>
-          <p><strong>Warnings:</strong> {{ drugResult.warnings }}</p>
+          <p><strong>Purpose:</strong> {{ (drugResult.purpose || 'N/A') | stripFdaPrefix }}</p>
+          <div class="warnings-block">
+            <strong>Warnings:</strong>
+            <ul class="warnings-list">
+              <li *ngFor="let point of drugResult.warnings | fdaPoints">{{ point }}</li>
+            </ul>
+          </div>
         </div>
 
         <div class="notes-section">
@@ -187,8 +192,24 @@
               <button class="btn danger small" (click)="deleteFavorite(favorite.id)">Delete</button>
             </div>
           </div>
-          <p class="muted"><strong>Purpose:</strong> {{ favorite.purpose || 'N/A' }}</p>
-          <p class="muted"><strong>Warnings:</strong> {{ favorite.warnings }}</p>
+          <p class="muted"><strong>Purpose:</strong> {{ (favorite.purpose || 'N/A') | stripFdaPrefix }}</p>
+
+          <div class="fav-warnings" *ngIf="favorite.warnings | fdaPoints as warningPoints">
+            <strong>Warnings:</strong>
+            <p class="muted warnings-preview" *ngIf="!favoriteShowWarnings[getFavoriteKey(favorite)]">
+              {{ warningPoints[0] }}
+            </p>
+            <ul class="warnings-list" *ngIf="favoriteShowWarnings[getFavoriteKey(favorite)]">
+              <li *ngFor="let point of warningPoints">{{ point }}</li>
+            </ul>
+            <button
+              class="btn outline small"
+              *ngIf="warningPoints.length > 1"
+              (click)="favoriteShowWarnings[getFavoriteKey(favorite)] = !favoriteShowWarnings[getFavoriteKey(favorite)]"
+            >
+              {{ favoriteShowWarnings[getFavoriteKey(favorite)] ? 'Show less' : 'Show all warnings' }}
+            </button>
+          </div>
 
           <div class="favorite-notes">
             <h5>Notes</h5>

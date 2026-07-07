@@ -7,11 +7,12 @@ import { DrugService, DrugResult, InteractionResult } from '../../services/drug'
 import { FavoriteService, FavoriteDrug } from '../../services/favorite';
 import { NoteService, DrugNote } from '../../services/note';
 import { AuthService } from '../../services/auth';
+import { FdaPointsPipe, StripFdaPrefixPipe } from '../../pipes/fda-text.pipe';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FdaPointsPipe, StripFdaPrefixPipe],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
@@ -40,6 +41,8 @@ export class Dashboard implements OnInit {
   favoriteNewNote: { [key: string]: string } = {};
   // Controls whether the "new note" input is visible for a favorite
   favoriteShowNewNote: { [key: string]: boolean } = {};
+  // Controls whether a favorite's full warnings list is expanded
+  favoriteShowWarnings: { [key: string]: boolean } = {};
 
   // Interaction checker
   interactionDrugA = '';
