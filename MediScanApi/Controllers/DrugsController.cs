@@ -31,7 +31,10 @@ namespace MediScanApi.Controllers
                 {
                     name = result.Info!.Name,
                     purpose = result.Info.Purpose,
-                    warnings = result.Info.Warnings
+                    warnings = result.Info.Warnings,
+                    dosageAndAdministration = result.Info.DosageAndAdministration,
+                    pediatricUse = result.Info.PediatricUse,
+                    geriatricUse = result.Info.GeriatricUse
                 }),
                 LabelFetchStatus.NotFound => NotFound("Drug not found."),
                 _ => StatusCode(502, result.ErrorMessage)
@@ -96,7 +99,14 @@ namespace MediScanApi.Controllers
 
         private enum LabelFetchStatus { Ok, NotFound, UpstreamError }
 
-        private record DrugLabelInfo(string Name, string Purpose, string Warnings, string DrugInteractions);
+        private record DrugLabelInfo(
+            string Name,
+            string Purpose,
+            string Warnings,
+            string DrugInteractions,
+            string DosageAndAdministration,
+            string PediatricUse,
+            string GeriatricUse);
 
         private record LabelFetchResult(LabelFetchStatus Status, DrugLabelInfo? Info, string? ErrorMessage);
 
@@ -189,10 +199,6 @@ namespace MediScanApi.Controllers
             var result = results[0];
 
             string drugName = name;
-            string warnings = "No warnings available.";
-            string purpose = "No purpose available.";
-            string interactions = "No drug interaction information available.";
-
             if (result.TryGetProperty("openfda", out var openfda) &&
                 openfda.TryGetProperty("brand_name", out var brandNames) &&
                 brandNames.GetArrayLength() > 0)
@@ -200,26 +206,27 @@ namespace MediScanApi.Controllers
                 drugName = brandNames[0].GetString() ?? name;
             }
 
-            if (result.TryGetProperty("warnings", out var warningArray) &&
-                warningArray.GetArrayLength() > 0)
+            var info = new DrugLabelInfo(
+                Name: drugName,
+                Purpose: GetLabelField(result, "purpose", "No purpose available."),
+                Warnings: GetLabelField(result, "warnings", "No warnings available."),
+                DrugInteractions: GetLabelField(result, "drug_interactions", "No drug interaction information available."),
+                DosageAndAdministration: GetLabelField(result, "dosage_and_administration", "No dosage information available."),
+                PediatricUse: GetLabelField(result, "pediatric_use", "No pediatric-specific information available."),
+                GeriatricUse: GetLabelField(result, "geriatric_use", "No geriatric-specific information available."));
+
+            return new LabelFetchResult(LabelFetchStatus.Ok, info, null);
+        }
+
+        // openFDA label sections are each a one-element string array when present.
+        private static string GetLabelField(JsonElement result, string propertyName, string fallback)
+        {
+            if (result.TryGetProperty(propertyName, out var array) && array.GetArrayLength() > 0)
             {
-                warnings = warningArray[0].GetString() ?? warnings;
+                return array[0].GetString() ?? fallback;
             }
 
-            if (result.TryGetProperty("purpose", out var purposeArray) &&
-                purposeArray.GetArrayLength() > 0)
-            {
-                purpose = purposeArray[0].GetString() ?? purpose;
-            }
-
-            if (result.TryGetProperty("drug_interactions", out var interactionArray) &&
-                interactionArray.GetArrayLength() > 0)
-            {
-                interactions = interactionArray[0].GetString() ?? interactions;
-            }
-
-            return new LabelFetchResult(LabelFetchStatus.Ok,
-                new DrugLabelInfo(drugName, purpose, warnings, interactions), null);
+            return fallback;
         }
     }
 }

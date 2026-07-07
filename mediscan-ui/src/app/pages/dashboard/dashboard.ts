@@ -52,6 +52,12 @@ export class Dashboard implements OnInit {
   isCheckingInteraction = false;
   showFullInteractionText: { a: boolean; b: boolean } = { a: false, b: false };
 
+  // Recently viewed drugs (kept in this browser's localStorage, not the server —
+  // it's just a quick-access convenience, not something that needs to sync across devices)
+  recentlyViewed: { name: string; purpose?: string }[] = [];
+  private readonly recentViewsStorageKey = 'mediscan_recent_views';
+  private readonly maxRecentViews = 8;
+
   constructor(
     private drugService: DrugService,
     private favoriteService: FavoriteService,
@@ -64,6 +70,31 @@ export class Dashboard implements OnInit {
 
   ngOnInit(): void {
     this.loadFavorites();
+    this.loadRecentlyViewed();
+  }
+
+  private loadRecentlyViewed(): void {
+    try {
+      const raw = localStorage.getItem(this.recentViewsStorageKey);
+      this.recentlyViewed = raw ? JSON.parse(raw) : [];
+    } catch {
+      this.recentlyViewed = [];
+    }
+  }
+
+  private recordRecentView(result: DrugResult): void {
+    const key = result.name.trim().toLowerCase();
+    this.recentlyViewed = [
+      { name: result.name, purpose: result.purpose },
+      ...this.recentlyViewed.filter((r) => r.name.trim().toLowerCase() !== key)
+    ].slice(0, this.maxRecentViews);
+
+    localStorage.setItem(this.recentViewsStorageKey, JSON.stringify(this.recentlyViewed));
+  }
+
+  searchRecentDrug(name: string): void {
+    this.drugName = name;
+    this.searchDrug();
   }
 
   logout() {
@@ -129,6 +160,7 @@ export class Dashboard implements OnInit {
           this.checkIfCurrentFavorite();
           // Load notes for this drug
           this.loadNotes(this.drugResult.name);
+          this.recordRecentView(result);
           this.isLoading = false;
           this.cdr.detectChanges();
         });

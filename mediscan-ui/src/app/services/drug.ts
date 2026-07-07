@@ -7,6 +7,9 @@ export interface DrugResult {
   name: string;
   purpose?: string;
   warnings: string;
+  dosageAndAdministration: string;
+  pediatricUse: string;
+  geriatricUse: string;
 }
 
 export interface DrugInteractionSide {

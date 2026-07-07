@@ -7,7 +7,21 @@
     <button class="btn outline logout-btn" (click)="logout()">Log Out</button>
   </header>
 
-  <main class="container">
+  <div class="dashboard-grid">
+    <aside class="sidebar sidebar-left card">
+      <h3>Recently Viewed</h3>
+      <ul class="recent-list" *ngIf="recentlyViewed.length > 0">
+        <li *ngFor="let item of recentlyViewed" (click)="searchRecentDrug(item.name)">
+          <strong>{{ item.name }}</strong>
+          <span *ngIf="item.purpose">{{ item.purpose | stripFdaPrefix }}</span>
+        </li>
+      </ul>
+      <p class="muted empty-hint" *ngIf="recentlyViewed.length === 0">
+        Drugs you search for will show up here for quick access.
+      </p>
+    </aside>
+
+    <main class="container">
     <section class="search-area card">
       <div class="search-row">
         <input
@@ -256,7 +270,39 @@
         </div>
       </div>
     </section>
-  </main>
+    </main>
+
+    <aside class="sidebar sidebar-right card">
+      <h3>Dosage &amp; Age Group Info</h3>
+      <ng-container *ngIf="drugResult; else noDosageResult">
+        <h5>{{ drugResult.name }}</h5>
+
+        <div class="dosage-block">
+          <strong>Dosage &amp; Administration</strong>
+          <ul class="warnings-list">
+            <li *ngFor="let point of drugResult.dosageAndAdministration | fdaPoints">{{ point }}</li>
+          </ul>
+        </div>
+
+        <div class="dosage-block">
+          <strong>Pediatric Use</strong>
+          <ul class="warnings-list">
+            <li *ngFor="let point of drugResult.pediatricUse | fdaPoints">{{ point }}</li>
+          </ul>
+        </div>
+
+        <div class="dosage-block">
+          <strong>Geriatric Use</strong>
+          <ul class="warnings-list">
+            <li *ngFor="let point of drugResult.geriatricUse | fdaPoints">{{ point }}</li>
+          </ul>
+        </div>
+      </ng-container>
+      <ng-template #noDosageResult>
+        <p class="muted empty-hint">Search a drug to see dosage and age-group guidance here.</p>
+      </ng-template>
+    </aside>
+  </div>
 
   <footer class="app-footer muted">MediScan — quick reference only. Not medical advice.</footer>
 </div>
