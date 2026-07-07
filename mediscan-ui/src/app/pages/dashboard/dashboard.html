@@ -120,12 +120,49 @@
 
         <div class="interaction-columns">
           <div class="interaction-col">
-            <h4>{{ interactionResult.drugA.name }}</h4>
-            <p class="muted">{{ interactionResult.drugA.drugInteractions }}</p>
+            <div class="interaction-col-head">
+              <h4>{{ interactionResult.drugA.name }}</h4>
+              <span class="mention-badge" [class.yes]="interactionResult.drugA.mentionsOther">
+                {{ interactionResult.drugA.mentionsOther
+                  ? '⚠ Mentions ' + interactionResult.drugB.name
+                  : '✓ No mention of ' + interactionResult.drugB.name }}
+              </span>
+            </div>
+
+            <ul class="excerpt-list" *ngIf="interactionResult.drugA.matchedExcerpts.length > 0">
+              <li *ngFor="let excerpt of interactionResult.drugA.matchedExcerpts">{{ excerpt }}</li>
+            </ul>
+            <p class="muted" *ngIf="interactionResult.drugA.matchedExcerpts.length === 0">
+              No specific mention found in this label.
+            </p>
+
+            <button class="btn outline small" (click)="showFullInteractionText.a = !showFullInteractionText.a">
+              {{ showFullInteractionText.a ? 'Hide full label text' : 'Show full label text' }}
+            </button>
+            <p class="muted full-text" *ngIf="showFullInteractionText.a">{{ interactionResult.drugA.fullText }}</p>
           </div>
+
           <div class="interaction-col">
-            <h4>{{ interactionResult.drugB.name }}</h4>
-            <p class="muted">{{ interactionResult.drugB.drugInteractions }}</p>
+            <div class="interaction-col-head">
+              <h4>{{ interactionResult.drugB.name }}</h4>
+              <span class="mention-badge" [class.yes]="interactionResult.drugB.mentionsOther">
+                {{ interactionResult.drugB.mentionsOther
+                  ? '⚠ Mentions ' + interactionResult.drugA.name
+                  : '✓ No mention of ' + interactionResult.drugA.name }}
+              </span>
+            </div>
+
+            <ul class="excerpt-list" *ngIf="interactionResult.drugB.matchedExcerpts.length > 0">
+              <li *ngFor="let excerpt of interactionResult.drugB.matchedExcerpts">{{ excerpt }}</li>
+            </ul>
+            <p class="muted" *ngIf="interactionResult.drugB.matchedExcerpts.length === 0">
+              No specific mention found in this label.
+            </p>
+
+            <button class="btn outline small" (click)="showFullInteractionText.b = !showFullInteractionText.b">
+              {{ showFullInteractionText.b ? 'Hide full label text' : 'Show full label text' }}
+            </button>
+            <p class="muted full-text" *ngIf="showFullInteractionText.b">{{ interactionResult.drugB.fullText }}</p>
           </div>
         </div>
 

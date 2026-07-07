@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace MediScanApi.Controllers
 {
@@ -67,14 +68,26 @@ namespace MediScanApi.Controllers
             // Cross-check using the names the user actually typed (e.g. "aspirin"), since a
             // label's interaction text tends to reference generic/common names rather than
             // another label's specific brand name (e.g. "Low Dose Aspirin").
-            var aMentionsB = MentionsDrug(infoA, drugB);
-            var bMentionsA = MentionsDrug(infoB, drugA);
+            var excerptsA = ExtractMatchingExcerpts(infoA, drugB);
+            var excerptsB = ExtractMatchingExcerpts(infoB, drugA);
 
             return Ok(new
             {
-                drugA = new { name = infoA.Name, drugInteractions = infoA.DrugInteractions },
-                drugB = new { name = infoB.Name, drugInteractions = infoB.DrugInteractions },
-                possibleInteractionFlagged = aMentionsB || bMentionsA,
+                drugA = new
+                {
+                    name = infoA.Name,
+                    mentionsOther = excerptsA.Count > 0,
+                    matchedExcerpts = excerptsA,
+                    fullText = infoA.DrugInteractions
+                },
+                drugB = new
+                {
+                    name = infoB.Name,
+                    mentionsOther = excerptsB.Count > 0,
+                    matchedExcerpts = excerptsB,
+                    fullText = infoB.DrugInteractions
+                },
+                possibleInteractionFlagged = excerptsA.Count > 0 || excerptsB.Count > 0,
                 disclaimer = "This checks whether each drug's FDA label text mentions the other drug by name. " +
                              "It is a simple keyword match, not a clinical interaction database — always consult " +
                              "a pharmacist or doctor before combining medications."
@@ -87,13 +100,48 @@ namespace MediScanApi.Controllers
 
         private record LabelFetchResult(LabelFetchStatus Status, DrugLabelInfo? Info, string? ErrorMessage);
 
-        private static bool MentionsDrug(DrugLabelInfo info, string otherDrugName)
+        // FDA label text is one giant blob per section, which isn't useful to read as-is.
+        // Instead of dumping the whole thing, split it into sentences and surface only the
+        // ones that actually mention the other drug, so the UI can show a short, targeted
+        // excerpt instead of a wall of text.
+        private static List<string> ExtractMatchingExcerpts(DrugLabelInfo info, string otherDrugName, int maxExcerpts = 4)
         {
             var needle = otherDrugName.Trim();
-            if (needle.Length == 0) return false;
+            var matches = new List<string>();
+            if (needle.Length == 0) return matches;
 
             var haystack = $"{info.Warnings} {info.DrugInteractions}";
-            return haystack.Contains(needle, StringComparison.OrdinalIgnoreCase);
+
+            // Split on sentence boundaries, and also before "Table N:" and numbered subsection
+            // headers (e.g. "7.4 Antibiotics...") — FDA label text collapses tables into
+            // unpunctuated runs of text, so without these extra breakpoints a single "sentence"
+            // can end up being an entire table.
+            var sentences = Regex.Split(
+                haystack.Trim(),
+                @"(?<=[.!?])\s+(?=[A-Z0-9])|\s+(?=Table\s+\d+:)|\s+(?=\d\.\d\s+[A-Z][a-z])");
+
+            foreach (var raw in sentences)
+            {
+                var sentence = raw.Trim();
+                // Skip short fragments (section numbers, table headers) that aren't useful on their own.
+                if (sentence.Length < 20) continue;
+                if (!sentence.Contains(needle, StringComparison.OrdinalIgnoreCase)) continue;
+
+                if (sentence.Length > 400)
+                {
+                    var cutoff = sentence.LastIndexOf(' ', 380);
+                    sentence = sentence[..(cutoff > 0 ? cutoff : 380)] + "…";
+                }
+
+                if (!matches.Contains(sentence))
+                {
+                    matches.Add(sentence);
+                }
+
+                if (matches.Count >= maxExcerpts) break;
+            }
+
+            return matches;
         }
 
         private async Task<LabelFetchResult> FetchDrugLabelAsync(string name)

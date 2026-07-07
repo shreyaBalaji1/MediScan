@@ -47,6 +47,7 @@ export class Dashboard implements OnInit {
   interactionResult: InteractionResult | null = null;
   interactionError = '';
   isCheckingInteraction = false;
+  showFullInteractionText: { a: boolean; b: boolean } = { a: false, b: false };
 
   constructor(
     private drugService: DrugService,
@@ -70,6 +71,7 @@ export class Dashboard implements OnInit {
   checkInteraction() {
     this.interactionError = '';
     this.interactionResult = null;
+    this.showFullInteractionText = { a: false, b: false };
 
     const drugA = this.interactionDrugA.trim();
     const drugB = this.interactionDrugB.trim();

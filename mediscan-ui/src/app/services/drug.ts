@@ -11,7 +11,9 @@ export interface DrugResult {
 
 export interface DrugInteractionSide {
   name: string;
-  drugInteractions: string;
+  mentionsOther: boolean;
+  matchedExcerpts: string[];
+  fullText: string;
 }
 
 export interface InteractionResult {
